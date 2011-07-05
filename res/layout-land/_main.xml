@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent" android:layout_height="fill_parent"
+    android:orientation="horizontal" android:background="#000000">
+
+    <RelativeLayout android:id="@+id/coverflow"
+        android:layout_height="fill_parent" android:layout_width="wrap_content"
+        android:orientation="vertical" android:padding="0dip"
+        android:background="#000" android:layout_weight="5">
+
+        <org.yavdr.yadroid.ui.coverflow.CoverFlow
+            android:id="@+id/gallery" android:layout_width="200dip"
+            android:layout_height="fill_parent" android:scrollbars="none"
+            android:cacheColorHint="#000000" android:unselectedAlpha="1"
+            android:fadingEdge="none" />
+
+        <!-- ImageView android:src="@drawable/ic_cover_flow_arrow_left"
+            android:layout_width="23dip" android:layout_height="33dip"
+            android:layout_centerVertical="true" android:layout_alignParentLeft="true"></ImageView>
+        <ImageView android:src="@drawable/ic_cover_flow_arrow_right"
+            android:layout_width="23dip" android:layout_height="33dip"
+            android:layout_centerVertical="true" android:layout_alignParentRight="true"></ImageView -->
+        <TextView android:id="@+id/text" android:layout_width="fill_parent"
+            android:layout_below="@id/gallery" android:layout_height="36sp"
+            android:text="" android:layout_alignParentBottom="true"
+            android:gravity="center_horizontal|top" style="@style/bold"></TextView>
+    </RelativeLayout>
+    <ListView android:id="@android:id/list" android:layout_width="fill_parent"
+        android:layout_height="wrap_content" android:cacheColorHint="#000000"
+        android:fastScrollEnabled="true" android:layout_weight="2"
+        android:scrollingCache="true" android:choiceMode="singleChoice"
+        android:focusableInTouchMode="false" />
+</LinearLayout>

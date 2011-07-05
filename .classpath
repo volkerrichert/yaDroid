@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="gen"/>
+	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
+	<classpathentry kind="lib" path="lib/CWAC-Adapter.jar"/>
+	<classpathentry kind="lib" path="lib/jmdns.jar" sourcepath="/JMDNS/src/main/java"/>
+	<classpathentry kind="lib" path="lib/ormlite-core-4.23.jar"/>
+	<classpathentry kind="lib" path="lib/ormlite-android-4.23.jar"/>
+	<classpathentry kind="lib" path="lib/wmqtt.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

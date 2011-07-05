@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">yaDroid</string>
+    <string name="search_label">Suche</string>
+    <string name="search_hint">EPG Suche</string>
+    <string name="search_settings_description">yaVDR EPG Suche</string>
+</resources>

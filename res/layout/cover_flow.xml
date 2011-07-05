@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="fill_parent"
+	android:layout_height="wrap_content" xmlns:android="http://schemas.android.com/apk/res/android"
+	android:orientation="vertical" 
+	android:paddingTop="15dip" >
+
+	<org.yavdr.yadroid.ui.coverflow.CoverFlow android:id="@+id/gallery"
+	android:layout_width="fill_parent" android:layout_height="100dip"
+	android:scrollbars="horizontal" android:unselectedAlpha="1"
+	android:fadingEdge="none"></org.yavdr.yadroid.ui.coverflow.CoverFlow>
+	<!-- ImageView android:src="@drawable/ic_cover_flow_arrow_left"
+		android:layout_width="23dip" android:layout_height="33dip"
+		android:layout_centerVertical="true" android:layout_alignParentLeft="true"></ImageView>
+	<ImageView android:src="@drawable/ic_cover_flow_arrow_right"
+		android:layout_width="23dip" android:layout_height="33dip"
+		android:layout_centerVertical="true" android:layout_alignParentRight="true"></ImageView -->
+	<TextView android:id="@+id/text" android:layout_width="fill_parent"
+		android:layout_below="@id/gallery" android:layout_height="36sp"
+		android:text="" android:layout_alignParentBottom="true"
+		android:gravity="center_horizontal|top" style="@style/bold"></TextView>
+</RelativeLayout>
