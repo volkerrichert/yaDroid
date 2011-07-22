@@ -38,7 +38,7 @@ public class EpgDetail extends Activity {
 		super.onCreate(savedInstanceState);
 
 		imageLoader = new ImageLoader(getApplicationContext());
-		urlPrefix = ((YaVDRApplication) getApplication()).getUrlPrefix();
+		urlPrefix = ((YaVDRApplication) getApplication()).getRestfulPrefix();
 
 		setContentView(R.layout.epgdetail);
 	}

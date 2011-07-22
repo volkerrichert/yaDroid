@@ -1,5 +1,6 @@
 package org.yavdr.yadroid;
 
+import org.yavdr.yadroid.core.YaVDRApplication;
 import org.yavdr.yadroid.services.PushService;
 import org.yavdr.yadroid.services.VdrService;
 import org.yavdr.yadroid.services.VdrService.VdrBinder;
@@ -40,8 +41,8 @@ public abstract class YaVDRActivity extends Activity {
 		Intent intent = new Intent(this, VdrService.class);
 		bindService(intent, vdrConnection, Context.BIND_AUTO_CREATE);
 		
-		PushService.actionStart(getApplicationContext());
-		
+		if (((YaVDRApplication)getApplicationContext()).getRestfulPrefix() != null)
+			PushService.actionStart(getApplicationContext());
 	}
 
 	/** Defines callbacks for service binding, passed to bindService() */
@@ -102,6 +103,6 @@ public abstract class YaVDRActivity extends Activity {
 			zcBound = false;
 		}
 		
-		PushService.actionStart(getApplicationContext());
+		PushService.actionStop(getApplicationContext());
 	}
 }

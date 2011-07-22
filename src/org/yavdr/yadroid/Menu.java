@@ -31,7 +31,7 @@ public class Menu extends Activity {
 	protected void onStart() {
 		super.onStart();
 		
-		urlPrefix = ((YaVDRApplication)getApplication()).getUrlPrefix();
+		urlPrefix = ((YaVDRApplication)getApplication()).getRestfulPrefix();
         // Bind to LocalService
         Intent intent = new Intent(this, VdrService.class);
         intent.putExtra("urlPrefix", urlPrefix);

@@ -4,14 +4,27 @@ import android.app.Application;
 
 public class YaVDRApplication extends Application {
 
-	private String urlPrefix;
-	
-	public String getUrlPrefix() {
-		return urlPrefix;
+	private String host;
+	private int port;
+
+	public void setHost(String host) {
+		this.host = host;
 	}
 
-	public void setUrlPrefix(String urlPrefix) {
-		this.urlPrefix = urlPrefix;
+	public String getHost() {
+		return host;
+	}
+
+	public void setPort(int port) {
+		this.port = port;
+	}
+
+	public int getPort() {
+		return port;
+	}
+
+	public String getRestfulPrefix() {
+		return "http://" + host + ":" + port;
 	}
 
 	@Override

@@ -2,6 +2,7 @@ package org.yavdr.yadroid.services;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -20,7 +21,7 @@ import android.os.IBinder;
 import android.util.Log;
 
 public class VdrService extends Service {
-	final DefaultHttpClient client = new DefaultHttpClient();
+	private static final DefaultHttpClient client = new DefaultHttpClient();
 
 	private static final String TAG = VdrService.class.toString();
 	private String urlPrefix;
@@ -92,6 +93,15 @@ public class VdrService extends Service {
 		synchronized (requests) {
 			requests.add(this.urlPrefix + "/remote/back");
 			requests.notify();
+		}
+	}
+	
+	public static boolean isOnline(String vdr, int port) {
+		try {
+			HttpResponse response = client.execute(new HttpGet(new URI("http://" + vdr + ":" + port + "/info.json")));
+			return response.getStatusLine().getStatusCode() == 200;
+		} catch (Exception e) {
+			return false;
 		}
 	}
 

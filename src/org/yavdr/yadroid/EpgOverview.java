@@ -101,7 +101,7 @@ public class EpgOverview extends YaVDRListActivity implements OnClickListener,
 			 * toast.show();
 			 */
 
-			urlPrefix = ((YaVDRApplication)getApplication()).getUrlPrefix();
+			urlPrefix = ((YaVDRApplication)getApplication()).getRestfulPrefix();
 			// currentChannel = extras.getString("channel");
 
 			setListAdapter(epgListAdapter = new EpgListAdapter(
@@ -453,7 +453,7 @@ public class EpgOverview extends YaVDRListActivity implements OnClickListener,
 		@Override
 		protected boolean cacheInBackground() {
 			try {
-				String urlPrefix = ((YaVDRApplication)getApplication()).getUrlPrefix();
+				String urlPrefix = ((YaVDRApplication)getApplication()).getRestfulPrefix();
 
 				ChannelAdapter a = (ChannelAdapter) getWrappedAdapter();
 

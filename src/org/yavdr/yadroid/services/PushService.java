@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.yavdr.yadroid.EpgOverview;
 import org.yavdr.yadroid.R;
+import org.yavdr.yadroid.core.YaVDRApplication;
 
 import com.ibm.mqtt.IMqttClient;
 import com.ibm.mqtt.MqttClient;
@@ -38,7 +39,7 @@ public class PushService extends Service {
 	public static final String TAG = PushService.class.toString();
 
 	// the IP address, where your MQTT broker is running.
-	private static final String MQTT_HOST = "192.168.1.35";
+//	private static final String MQTT_HOST = "vdr-sz";
 	// the port at which the broker is running.
 	private static int MQTT_BROKER_PORT_NUM = 1883;
 	// Let's not use the MQTT persistence.
@@ -71,7 +72,9 @@ public class PushService extends Service {
 			+ ".KEEP_ALIVE";
 	private static final String ACTION_RECONNECT = MQTT_CLIENT_ID
 			+ ".RECONNECT";
-
+	private static final String initTopic = "application/vdr/status/+";
+	private static final String clientTopic = "application/vdr/client";
+	
 	// Connectivity manager to determining, when the phone loses connection
 	private ConnectivityManager mConnMan;
 	// Notification manager to displaying arrived push notifications
@@ -274,7 +277,7 @@ public class PushService extends Service {
 			log("Device ID not found.");
 		} else {
 			try {
-				mConnection = new MQTTConnection(MQTT_HOST, "status");
+				mConnection = new MQTTConnection(((YaVDRApplication)this.getApplicationContext()).getHost(), this.initTopic);
 			} catch (MqttException e) {
 				// Schedule a reconnect, if we failed to connect
 				log("MqttException: "
@@ -401,7 +404,7 @@ public class PushService extends Service {
 	};
 
 	// Display the topbar notification
-	private void showNotification(String text) {
+	private void showNotification(String title, String s) {
 		Notification n = new Notification();
 
 		n.flags |= Notification.FLAG_SHOW_LIGHTS;
@@ -417,7 +420,7 @@ public class PushService extends Service {
 				EpgOverview.class), 0);
 
 		// Change the name of the notification here
-		n.setLatestEventInfo(this, NOTIF_TITLE, text, pi);
+		n.setLatestEventInfo(this, title, s, pi);
 
 		mNotifMan.notify(NOTIF_CONNECTED, n);
 	}
@@ -453,7 +456,6 @@ public class PushService extends Service {
 
 			// Subscribe to an initial topic, which is combination of client ID
 			// and device ID.
-			initTopic = MQTT_CLIENT_ID + "/" + initTopic;
 			subscribeToTopic(initTopic);
 
 			log("Connection established to " + brokerHostName + " on topic "
@@ -530,7 +532,7 @@ public class PushService extends Service {
 				boolean retained) {
 			// Show a notification
 			String s = new String(payload);
-			showNotification(s);
+			showNotification(topicName, s);
 			log("Got message: " + s);
 		}
 
