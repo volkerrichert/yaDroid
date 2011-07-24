@@ -1,10 +1,18 @@
 package org.yavdr.yadroid.services;
 
 import java.io.IOException;
+import java.util.Date;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.yavdr.yadroid.EpgOverview;
 import org.yavdr.yadroid.R;
 import org.yavdr.yadroid.core.YaVDRApplication;
+import org.yavdr.yadroid.core.json.JSONClient;
+import org.yavdr.yadroid.services.VdrService.VdrBinder;
+import org.yavdr.yadroid.services.iface.OnPublishListener;
+import org.yavdr.yadroid.vdr.data.OsdChannel;
+import org.yavdr.yadroid.vdr.data.OsdProgramme;
 
 import com.ibm.mqtt.IMqttClient;
 import com.ibm.mqtt.MqttClient;
@@ -13,6 +21,7 @@ import com.ibm.mqtt.MqttPersistence;
 import com.ibm.mqtt.MqttPersistenceException;
 import com.ibm.mqtt.MqttSimpleCallback;
 
+import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -25,6 +34,7 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.Binder;
 import android.os.IBinder;
 import android.provider.Settings.Secure;
 import android.util.Log;
@@ -39,7 +49,7 @@ public class PushService extends Service {
 	public static final String TAG = PushService.class.toString();
 
 	// the IP address, where your MQTT broker is running.
-//	private static final String MQTT_HOST = "vdr-sz";
+	// private static final String MQTT_HOST = "vdr-sz";
 	// the port at which the broker is running.
 	private static int MQTT_BROKER_PORT_NUM = 1883;
 	// Let's not use the MQTT persistence.
@@ -73,13 +83,8 @@ public class PushService extends Service {
 	private static final String ACTION_RECONNECT = MQTT_CLIENT_ID
 			+ ".RECONNECT";
 	private static final String initTopic = "application/vdr/status/+";
-	private static final String clientTopic = "application/vdr/client";
-	
 	// Connectivity manager to determining, when the phone loses connection
 	private ConnectivityManager mConnMan;
-	// Notification manager to displaying arrived push notifications
-	private NotificationManager mNotifMan;
-
 	// Whether or not the service has been started.
 	private boolean mStarted;
 
@@ -101,27 +106,29 @@ public class PushService extends Service {
 	// We store the last retry interval
 	public static final String PREF_RETRY = "retryInterval";
 
-	// Notification title
-	public static String NOTIF_TITLE = "Tokudu";
-	// Notification id
-	private static final int NOTIF_CONNECTED = 0;
-
 	// This is the instance of an MQTT connection.
 	private MQTTConnection mConnection;
 	private long mStartTime;
 
+	private static int started = 0;
+
 	// Static method to start the service
 	public static void actionStart(Context ctx) {
-		Intent i = new Intent(ctx, PushService.class);
-		i.setAction(ACTION_START);
-		ctx.startService(i);
+		if (PushService.started == 0) {
+			Intent i = new Intent(ctx, PushService.class);
+			i.setAction(ACTION_START);
+			ctx.startService(i);
+		}
+		started++;
 	}
 
 	// Static method to stop the service
 	public static void actionStop(Context ctx) {
-		Intent i = new Intent(ctx, PushService.class);
-		i.setAction(ACTION_STOP);
-		ctx.startService(i);
+		if (--started == 0) {
+			Intent i = new Intent(ctx, PushService.class);
+			i.setAction(ACTION_STOP);
+			ctx.startService(i);
+		}
 	}
 
 	// Static method to send a keep alive message
@@ -142,7 +149,6 @@ public class PushService extends Service {
 		// manager
 		mPrefs = getSharedPreferences(TAG, MODE_PRIVATE);
 		mConnMan = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
-		mNotifMan = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
 		/*
 		 * If our process was reaped by the system for any reason we need to
@@ -271,13 +277,17 @@ public class PushService extends Service {
 		log("Connecting...");
 		// fetch the device ID from the preferences.
 		String deviceID = mPrefs.getString(PREF_DEVICE_ID, null);
-		deviceID = Secure.getString(this.getContentResolver(), Secure.ANDROID_ID);
+		deviceID = Secure.getString(this.getContentResolver(),
+				Secure.ANDROID_ID);
 		// Create a new connection only if the device id is not NULL
 		if (deviceID == null) {
 			log("Device ID not found.");
 		} else {
 			try {
-				mConnection = new MQTTConnection(((YaVDRApplication)this.getApplicationContext()).getHost(), this.initTopic);
+				mConnection = new MQTTConnection(
+						((YaVDRApplication) this.getApplicationContext())
+								.getHost(),
+						PushService.initTopic);
 			} catch (MqttException e) {
 				// Schedule a reconnect, if we failed to connect
 				log("MqttException: "
@@ -403,28 +413,6 @@ public class PushService extends Service {
 		}
 	};
 
-	// Display the topbar notification
-	private void showNotification(String title, String s) {
-		Notification n = new Notification();
-
-		n.flags |= Notification.FLAG_SHOW_LIGHTS;
-		n.flags |= Notification.FLAG_AUTO_CANCEL;
-
-		n.defaults = Notification.DEFAULT_ALL;
-
-		n.icon = R.drawable.icon;
-		n.when = System.currentTimeMillis();
-
-		// Simply open the parent activity
-		PendingIntent pi = PendingIntent.getActivity(this, 0, new Intent(this,
-				EpgOverview.class), 0);
-
-		// Change the name of the notification here
-		n.setLatestEventInfo(this, title, s, pi);
-
-		mNotifMan.notify(NOTIF_CONNECTED, n);
-	}
-
 	// Check if we are online
 	private boolean isNetworkAvailable() {
 		NetworkInfo info = mConnMan.getActiveNetworkInfo();
@@ -437,6 +425,7 @@ public class PushService extends Service {
 	// This inner class is a wrapper on top of MQTT client.
 	private class MQTTConnection implements MqttSimpleCallback {
 		IMqttClient mqttClient = null;
+		private boolean isMessageOpen;
 
 		// Creates a new connection given the broker address and initial topic
 		public MQTTConnection(String brokerHostName, String initTopic)
@@ -531,9 +520,58 @@ public class PushService extends Service {
 		public void publishArrived(String topicName, byte[] payload, int qos,
 				boolean retained) {
 			// Show a notification
-			String s = new String(payload);
-			showNotification(topicName, s);
-			log("Got message: " + s);
+
+			try {
+				JSONObject data = new JSONObject(new String(payload).trim());
+
+				String subTopic = data.getString("method");
+				if ("OsdChannel".equals(subTopic)) {
+					OsdChannel osdChannel = new OsdChannel(data.getJSONObject(
+							"data").getString("text"));
+					Intent intent = new Intent(
+							"org.yavdr.yadroid.intent.vdr.OsdChannel");
+					intent.putExtra("data", osdChannel);
+					if (isMessageOpen) {
+						sendBroadcast(intent);
+					} else {
+						intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+						getApplication().startActivity(intent);
+						isMessageOpen = true;
+					}
+
+				} else if ("OsdProgramme".equals(subTopic)) {
+					OsdProgramme osdProgramme = new OsdProgramme();
+					JSONObject info = data.getJSONObject("data");
+					Intent broadcastIntent = new Intent(
+							"org.yavdr.yadroid.intent.vdr.OsdProgramme");
+					if (info.has("presentTime")) {
+						osdProgramme.setPresentTime(new Date(info
+								.getLong("presentTime")));
+						if (info.has("presentTitle"))
+							osdProgramme.setPresentTitle(info
+									.getString("presentTitle"));
+						else
+							osdProgramme.setPresentTitle(null);
+						if (info.has("presentSubtitle"))
+							osdProgramme.setPresentSubtitle(info
+									.getString("presentSubtitle"));
+						else
+							osdProgramme.setPresentSubtitle(null);
+					}
+					broadcastIntent.putExtra("data", osdProgramme);
+					sendBroadcast(broadcastIntent);
+				} else if ("OsdClear".equals(subTopic)) {
+					Intent broadcastIntent = new Intent();
+					broadcastIntent
+							.setAction("org.yavdr.yadroid.intent.vdr.OsdClear");
+					sendBroadcast(broadcastIntent);
+					isMessageOpen = false;
+				}
+
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 
 		public void sendKeepAlive() throws MqttException {

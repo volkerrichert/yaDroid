@@ -8,12 +8,10 @@ import org.yavdr.yadroid.services.ZeroConfService;
 import org.yavdr.yadroid.services.ZeroConfService.ZeroConfBinder;
 
 import android.app.Activity;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.os.Bundle;
 import android.os.IBinder;
 
 public abstract class YaVDRActivity extends Activity {
@@ -26,6 +24,7 @@ public abstract class YaVDRActivity extends Activity {
 
 	protected ServiceConnection vdrConnection;
 	protected ServiceConnection zcConnection;
+	protected ServiceConnection pushConnection;
 
 	@Override
 	protected void onStart() {
@@ -33,16 +32,18 @@ public abstract class YaVDRActivity extends Activity {
 
 		zcConnection = getZCServiceConnection();
 		// Bind to LocalService
-		Intent zcIntent = new Intent(this, ZeroConfService.class);
-		bindService(zcIntent, zcConnection, Context.BIND_AUTO_CREATE);
+		Intent intent = new Intent(this, ZeroConfService.class);
+		bindService(intent, zcConnection, Context.BIND_AUTO_CREATE);
 
 		vdrConnection = getVdrServiceConnection();
 		// Bind to LocalService
-		Intent intent = new Intent(this, VdrService.class);
+		intent = new Intent(this, VdrService.class);
 		bindService(intent, vdrConnection, Context.BIND_AUTO_CREATE);
+
 		
-		if (((YaVDRApplication)getApplicationContext()).getRestfulPrefix() != null)
+		if (((YaVDRApplication)getApplicationContext()).getRestfulPrefix() != null) {
 			PushService.actionStart(getApplicationContext());
+		}
 	}
 
 	/** Defines callbacks for service binding, passed to bindService() */

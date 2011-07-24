@@ -179,23 +179,6 @@ public class EpgOverview extends YaVDRListActivity implements OnClickListener,
 				}
 			});
 			
-			/** Defines callbacks for service binding, passed to bindService() */
-			mConnection = new ServiceConnection() {
-
-				@Override
-				public void onServiceConnected(ComponentName className, IBinder service) {
-					// We've bound to LocalService, cast the IBinder and get
-					// LocalService instance
-					VdrBinder binder = (VdrBinder) service;
-					mService = binder.getService();
-					mBound = true;
-				}
-
-				@Override
-				public void onServiceDisconnected(ComponentName arg0) {
-					mBound = false;
-				}
-			};
 		} else {
 			Toast toast = new Toast(getApplicationContext());
 			toast.setText("Fehler");
@@ -280,16 +263,16 @@ public class EpgOverview extends YaVDRListActivity implements OnClickListener,
 			}
 			break;
 		case KeyEvent.KEYCODE_VOLUME_UP:
-			if (mBound)
-				mService.keyVolUp();
+			if (vdrBound)
+				vdrService.keyVolUp();
 			return true;
 		case KeyEvent.KEYCODE_VOLUME_DOWN:
-			if (mBound)
-				mService.keyVolDown();
+			if (vdrBound)
+				vdrService.keyVolDown();
 			return true;
 		case KeyEvent.KEYCODE_MENU:
-			if (mBound) {
-				mService.keyMenu();
+			if (vdrBound) {
+				vdrService.keyMenu();
 				// Intent intent = new
 				// Intent("org.yavdr.yadroid.intent.action.MENU");
 				// intent.putExtras(getIntent().getExtras());

@@ -1,6 +1,7 @@
 package org.yavdr.yadroid;
 
 import org.yavdr.yadroid.core.YaVDRApplication;
+import org.yavdr.yadroid.dao.YaDroidDBHelper;
 import org.yavdr.yadroid.services.VdrService;
 import org.yavdr.yadroid.services.VdrService.VdrBinder;
 

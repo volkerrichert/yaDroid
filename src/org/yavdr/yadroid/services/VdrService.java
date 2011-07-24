@@ -33,8 +33,6 @@ public class VdrService extends Service {
 		super.onCreate();
 
 		new Thread(threadBody).start();
-
-		new Thread(menuThread).start();
 	}
 
 	@Override
@@ -126,40 +124,6 @@ public class VdrService extends Service {
 
 				} catch (InterruptedException e) {
 				}
-			}
-		}
-	};
-
-	private Runnable menuThread = new Runnable() {
-		private byte buf[] = new byte[500];
-
-		public void run() {
-			DefaultHttpClient client = new DefaultHttpClient();
-
-			try {
-				HttpGet httpget = new HttpGet("http://192.168.1.27/~volker/");
-
-				System.out.println("executing request"
-						+ httpget.getRequestLine());
-				HttpResponse response = client.execute(httpget);
-				HttpEntity entity = response.getEntity();
-
-				if (entity.isChunked()) {
-					EofSensorInputStream is = (EofSensorInputStream) entity
-							.getContent();
-
-					int len;
-					while ((len = is.read(buf)) > 0) {
-						String sbuf = new String(buf, 0, len);
-						Log.d(TAG, sbuf);
-					}
-				}
-			} catch (ClientProtocolException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			}
 		}
 	};

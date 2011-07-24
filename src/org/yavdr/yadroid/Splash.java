@@ -89,8 +89,6 @@ public class Splash extends YaVDRActivity {
                 }
                 catch(InterruptedException ex) {}
 
-        		
-                stop();                    
             }
         };
         

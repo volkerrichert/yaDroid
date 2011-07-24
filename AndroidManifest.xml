@@ -6,7 +6,7 @@
 
 	<uses-permission android:name="android.permission.INTERNET"></uses-permission>
 	<uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 	<uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 	<uses-permission android:name="android.permission.WAKE_LOCK" />
 	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
@@ -32,20 +32,28 @@
 				<category android:name="android.intent.category.DEFAULT" />
 			</intent-filter>
 		</activity>
-		<activity android:name=".Menu" android:theme="@android:style/Theme.NoTitleBar">
+
+        <!-- Push -->
+        <activity android:name=".Menu" android:theme="@android:style/Theme.NoTitleBar">
+            <intent-filter>
+                <action android:name="org.yavdr.yadroid.intent.action.MENU" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+		<activity android:name=".Message" android:theme="@style/Theme.Transparent" android:launchMode="singleInstance">
 			<intent-filter>
-				<action android:name="org.yavdr.yadroid.intent.action.MENU" />
+				<action android:name="org.yavdr.yadroid.intent.vdr.OsdChannel" />
 				<category android:name="android.intent.category.DEFAULT" />
 			</intent-filter>
 		</activity>
+		
+		<service android:name=".services.VdrService" />
+		<service android:name=".services.ZeroConfService" />
+		<service android:name=".services.PushService" />
 
-        <service android:name=".services.VdrService" />
-        <service android:name=".services.ZeroConfService" />
-        <service android:name=".services.PushService" />
-                
-        <!--  Search -->
-		<activity android:name=".GlobalSearchHandler"
-			android:label="@string/app_name" android:icon="@drawable/icon">
+		<!-- Search -->
+		<activity android:name=".GlobalSearchHandler" android:label="@string/app_name"
+			android:icon="@drawable/icon">
 			<intent-filter>
 				<action android:name="android.intent.action.SEARCH" />
 				<category android:name="android.intent.category.DEFAULT" />
@@ -54,8 +62,8 @@
 				android:resource="@xml/searchable" />
 		</activity>
 
-		<provider android:name=".provider.SearchProvider" android:authorities="org.yavdr.yadroid.search"
-			android:syncable="false" />
+		<provider android:name=".provider.SearchProvider"
+			android:authorities="org.yavdr.yadroid.search" android:syncable="false" />
 
 	</application>
 </manifest>
