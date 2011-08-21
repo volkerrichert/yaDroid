@@ -29,7 +29,6 @@ public class EpgDetail extends Activity {
 
 	private VdrService mService;
 	private boolean mBound = false;
-	private String urlPrefix;
 
 	private ImageLoader imageLoader;
 
@@ -38,7 +37,6 @@ public class EpgDetail extends Activity {
 		super.onCreate(savedInstanceState);
 
 		imageLoader = new ImageLoader(getApplicationContext());
-		urlPrefix = ((YaVDRApplication) getApplication()).getRestfulPrefix();
 
 		setContentView(R.layout.epgdetail);
 	}
@@ -49,7 +47,6 @@ public class EpgDetail extends Activity {
 
 		// Bind to LocalService
 		Intent intent = new Intent(this, VdrService.class);
-		intent.putExtra("urlPrefix", urlPrefix);
 		bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
 
 	}

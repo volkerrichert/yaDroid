@@ -1,32 +1,25 @@
 package org.yavdr.yadroid.core;
 
+import org.yavdr.yadroid.dao.pojo.Vdr;
+
 import android.app.Application;
 
 public class YaVDRApplication extends Application {
 
-	private String host;
-	private int port;
+	private Vdr currentVdr;
 
-	public void setHost(String host) {
-		this.host = host;
+	public void setCurrentVdr(Vdr vdr) {
+		this.currentVdr = vdr;
 	}
 
-	public String getHost() {
-		return host;
+	public Vdr getCurrentVdr() {
+		return currentVdr;
 	}
-
-	public void setPort(int port) {
-		this.port = port;
-	}
-
-	public int getPort() {
-		return port;
-	}
-
+	/*
 	public String getRestfulPrefix() {
 		return "http://" + host + ":" + port;
 	}
-
+*/
 	@Override
 	public void onCreate() {
 		super.onCreate();

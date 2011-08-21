@@ -125,7 +125,7 @@ abstract public class EndlessAdapter extends AdapterWrapper {
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
 
-		if (position == super.getCount() &&
+		if (position >= super.getCount() &&
 				keepOnAppending.get()) {
 			if (pendingView == null) {
 				pendingView = getPendingView(parent);
@@ -135,13 +135,7 @@ abstract public class EndlessAdapter extends AdapterWrapper {
 
 			return (pendingView);
 		}
-/*
-		if (position == super.getCount() *0.75 && // append earlier
-				keepOnAppending.get()) {
 
-			new AppendTask().execute();
-		}
-*/		
 		return (super.getView(position, convertView, parent));
 	}
 

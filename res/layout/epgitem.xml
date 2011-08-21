@@ -19,8 +19,7 @@
         android:layout_alignParentBottom="true"
         android:layout_marginRight="2dip"
         android:gravity="right|center_vertical"
-        
-        
+
         android:src="@drawable/icon"
         />
 

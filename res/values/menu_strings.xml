@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources>
+    <string name="manage_vdr">verwalte VDR</string>
+    <string name="add_vdr">VDR hinzfügen</string>
+    <string name="help">Hilfe</string>    
+</resources>

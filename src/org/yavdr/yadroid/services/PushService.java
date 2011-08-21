@@ -1,30 +1,14 @@
 package org.yavdr.yadroid.services;
 
-import java.io.IOException;
 import java.util.Date;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.yavdr.yadroid.EpgOverview;
-import org.yavdr.yadroid.R;
+import org.yavdr.yadroid.activity.vdr.data.OsdChannel;
+import org.yavdr.yadroid.activity.vdr.data.OsdProgramme;
 import org.yavdr.yadroid.core.YaVDRApplication;
-import org.yavdr.yadroid.core.json.JSONClient;
-import org.yavdr.yadroid.services.VdrService.VdrBinder;
-import org.yavdr.yadroid.services.iface.OnPublishListener;
-import org.yavdr.yadroid.vdr.data.OsdChannel;
-import org.yavdr.yadroid.vdr.data.OsdProgramme;
 
-import com.ibm.mqtt.IMqttClient;
-import com.ibm.mqtt.MqttClient;
-import com.ibm.mqtt.MqttException;
-import com.ibm.mqtt.MqttPersistence;
-import com.ibm.mqtt.MqttPersistenceException;
-import com.ibm.mqtt.MqttSimpleCallback;
-
-import android.app.Activity;
 import android.app.AlarmManager;
-import android.app.Notification;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -34,10 +18,17 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.Binder;
 import android.os.IBinder;
 import android.provider.Settings.Secure;
 import android.util.Log;
+
+import com.ibm.mqtt.IMqttClient;
+import com.ibm.mqtt.MqttAdvancedCallback;
+import com.ibm.mqtt.MqttClient;
+import com.ibm.mqtt.MqttException;
+import com.ibm.mqtt.MqttPersistence;
+import com.ibm.mqtt.MqttPersistenceException;
+import com.ibm.mqtt.MqttSimpleCallback;
 
 /* 
  * PushService that does all of the work.
@@ -110,25 +101,18 @@ public class PushService extends Service {
 	private MQTTConnection mConnection;
 	private long mStartTime;
 
-	private static int started = 0;
-
 	// Static method to start the service
 	public static void actionStart(Context ctx) {
-		if (PushService.started == 0) {
-			Intent i = new Intent(ctx, PushService.class);
-			i.setAction(ACTION_START);
-			ctx.startService(i);
-		}
-		started++;
+		Intent i = new Intent(ctx, PushService.class);
+		i.setAction(ACTION_START);
+		ctx.startService(i);
 	}
 
 	// Static method to stop the service
 	public static void actionStop(Context ctx) {
-		if (--started == 0) {
-			Intent i = new Intent(ctx, PushService.class);
-			i.setAction(ACTION_STOP);
-			ctx.startService(i);
-		}
+		Intent i = new Intent(ctx, PushService.class);
+		i.setAction(ACTION_STOP);
+		ctx.startService(i);
 	}
 
 	// Static method to send a keep alive message
@@ -275,23 +259,16 @@ public class PushService extends Service {
 	//
 	private synchronized void connect() {
 		log("Connecting...");
-		// fetch the device ID from the preferences.
-		String deviceID = mPrefs.getString(PREF_DEVICE_ID, null);
-		deviceID = Secure.getString(this.getContentResolver(),
-				Secure.ANDROID_ID);
-		// Create a new connection only if the device id is not NULL
-		if (deviceID == null) {
-			log("Device ID not found.");
-		} else {
+		if (((YaVDRApplication) this.getApplicationContext()).getCurrentVdr() != null) {
 			try {
 				mConnection = new MQTTConnection(
 						((YaVDRApplication) this.getApplicationContext())
-								.getHost(),
+								.getCurrentVdr().getAddress(),
 						PushService.initTopic);
 			} catch (MqttException e) {
 				// Schedule a reconnect, if we failed to connect
 				log("MqttException: "
-						+ (e.getMessage() != null ? e.getMessage() : "NULL"));
+						+ (e.getMessage() != null ? e.getMessage() : "NULL"), e);
 				if (isNetworkAvailable()) {
 					scheduleReconnect(mStartTime);
 				}
@@ -425,7 +402,6 @@ public class PushService extends Service {
 	// This inner class is a wrapper on top of MQTT client.
 	private class MQTTConnection implements MqttSimpleCallback {
 		IMqttClient mqttClient = null;
-		private boolean isMessageOpen;
 
 		// Creates a new connection given the broker address and initial topic
 		public MQTTConnection(String brokerHostName, String initTopic)
@@ -505,7 +481,7 @@ public class PushService extends Service {
 		 * broker.
 		 */
 		public void connectionLost() throws Exception {
-			log("Loss of connection" + "connection downed");
+			log("Loss of connection");
 			stopKeepAlives();
 			// null itself
 			mConnection = null;
@@ -531,13 +507,13 @@ public class PushService extends Service {
 					Intent intent = new Intent(
 							"org.yavdr.yadroid.intent.vdr.OsdChannel");
 					intent.putExtra("data", osdChannel);
-					if (isMessageOpen) {
-						sendBroadcast(intent);
-					} else {
-						intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-						getApplication().startActivity(intent);
-						isMessageOpen = true;
-					}
+					// if (isMessageOpen) {
+					sendBroadcast(intent);
+					// } else {
+					// intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+					// getApplication().startActivity(intent);
+					// isMessageOpen = true;
+					// }
 
 				} else if ("OsdProgramme".equals(subTopic)) {
 					OsdProgramme osdProgramme = new OsdProgramme();
@@ -565,7 +541,6 @@ public class PushService extends Service {
 					broadcastIntent
 							.setAction("org.yavdr.yadroid.intent.vdr.OsdClear");
 					sendBroadcast(broadcastIntent);
-					isMessageOpen = false;
 				}
 
 			} catch (JSONException e) {
@@ -580,5 +555,6 @@ public class PushService extends Service {
 			publishToTopic(MQTT_CLIENT_ID + "/keepalive",
 					mPrefs.getString(PREF_DEVICE_ID, ""));
 		}
+
 	}
 }

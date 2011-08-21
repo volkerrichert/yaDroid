@@ -20,7 +20,7 @@
 				<category android:name="android.intent.category.LAUNCHER" />
 			</intent-filter>
 		</activity>
-		<activity android:name="EpgOverview" android:theme="@android:style/Theme.NoTitleBar">
+		<activity android:name=".EpgOverview" android:theme="@android:style/Theme.NoTitleBar">
 			<intent-filter>
 				<action android:name="org.yavdr.yadroid.intent.action.START" />
 				<category android:name="android.intent.category.DEFAULT" />
@@ -32,20 +32,19 @@
 				<category android:name="android.intent.category.DEFAULT" />
 			</intent-filter>
 		</activity>
-
+        <activity android:name=".ManageVdr" android:theme="@android:style/Theme" android:label="@string/manage_vdr">
+            <intent-filter>
+                <action android:name="org.yavdr.yadroid.intent.action.MANAGEVDR" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
         <!-- Push -->
-        <activity android:name=".Menu" android:theme="@android:style/Theme.NoTitleBar">
+        <activity android:name=".activity.vdr.Menu" android:theme="@android:style/Theme.NoTitleBar" android:launchMode="singleInstance">
             <intent-filter>
                 <action android:name="org.yavdr.yadroid.intent.action.MENU" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-		<activity android:name=".Message" android:theme="@style/Theme.Transparent" android:launchMode="singleInstance">
-			<intent-filter>
-				<action android:name="org.yavdr.yadroid.intent.vdr.OsdChannel" />
-				<category android:name="android.intent.category.DEFAULT" />
-			</intent-filter>
-		</activity>
 		
 		<service android:name=".services.VdrService" />
 		<service android:name=".services.ZeroConfService" />

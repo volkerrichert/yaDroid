@@ -4,4 +4,6 @@
     <string name="search_label">Suche</string>
     <string name="search_hint">EPG Suche</string>
     <string name="search_settings_description">yaVDR EPG Suche</string>
+    
+    <string name="helptext">V2011.08.07 22:11</string>
 </resources>

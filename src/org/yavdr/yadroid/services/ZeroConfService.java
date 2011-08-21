@@ -102,18 +102,15 @@ public class ZeroConfService extends Service implements ServiceListener {
 	}
 
 	public void serviceResolved(ServiceEvent ev) {
-		notifyUser("yaVDR found: http://"
-				+ ev.getInfo().getInet4Addresses()[0].getHostName() + ":"
-				+ ev.getInfo().getPort());
+		//notifyUser("yaVDR found: http://"
+		//		+ ev.getInfo().getInet4Addresses()[0].getHostName() + ":"
+		//		+ ev.getInfo().getPort());
 		
 		Intent broadcastIntent = new Intent();
         broadcastIntent.setAction(YADROID_ZEROCONF_INTENT);
         broadcastIntent.putExtra(YADROID_ZEROCONF_INFO_ADDRESS, ev.getInfo().getInet4Addresses()[0]);
         broadcastIntent.putExtra(YADROID_ZEROCONF_INFO_PORT, ev.getInfo().getPort());
 
-        //TODO: remove it
-        broadcastIntent.putExtra("channel", ev.getInfo().getPropertyString("channel"));
-        
         sendBroadcast(broadcastIntent);		
 	}
 
@@ -130,7 +127,7 @@ public class ZeroConfService extends Service implements ServiceListener {
 			return;
 		}
 	}
-
+/*
 	private void notifyUser(final String string) {
 		handler.postDelayed(new Runnable() {
 			public void run() {
@@ -157,7 +154,7 @@ public class ZeroConfService extends Service implements ServiceListener {
 			}
 		}, 1);
 	}
-
+*/
 	public void serviceRemoved(ServiceEvent ev) {
 		Log.d(TAG, "Service removed: " + ev.getName());
 	}

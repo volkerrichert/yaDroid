@@ -1,4 +1,4 @@
-package org.yavdr.yadroid;
+package org.yavdr.yadroid.activity.vdr;
 
 import org.yavdr.yadroid.core.YaVDRApplication;
 import org.yavdr.yadroid.dao.YaDroidDBHelper;
@@ -20,7 +20,6 @@ public class Menu extends Activity {
 
     private VdrService mService;
     private boolean mBound = false;
-	private String urlPrefix;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -32,10 +31,8 @@ public class Menu extends Activity {
 	protected void onStart() {
 		super.onStart();
 		
-		urlPrefix = ((YaVDRApplication)getApplication()).getRestfulPrefix();
         // Bind to LocalService
         Intent intent = new Intent(this, VdrService.class);
-        intent.putExtra("urlPrefix", urlPrefix);
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
 
 	}

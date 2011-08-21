@@ -8,5 +8,6 @@
 	<classpathentry kind="lib" path="lib/ormlite-core-4.23.jar"/>
 	<classpathentry kind="lib" path="lib/ormlite-android-4.23.jar"/>
 	<classpathentry kind="lib" path="lib/wmqtt.jar"/>
+	<classpathentry kind="lib" path="lib/CWAC-EndlessAdapter.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

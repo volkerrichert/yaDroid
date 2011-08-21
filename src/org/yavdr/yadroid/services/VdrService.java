@@ -1,18 +1,13 @@
 package org.yavdr.yadroid.services;
 
-import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.conn.EofSensorInputStream;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.yavdr.yadroid.core.YaVDRApplication;
+import org.yavdr.yadroid.dao.pojo.Vdr;
 
 import android.app.Service;
 import android.content.Intent;
@@ -27,11 +22,13 @@ public class VdrService extends Service {
 	private String urlPrefix;
 	private LinkedList<String> requests = new LinkedList<String>();
 	private AtomicBoolean active = new AtomicBoolean(true);
+	
+	private Vdr vdr;
 
 	@Override
 	public void onCreate() {
 		super.onCreate();
-
+		
 		new Thread(threadBody).start();
 	}
 
@@ -68,38 +65,29 @@ public class VdrService extends Service {
 
 	public void keyVolUp() {
 		synchronized (requests) {
-			requests.add(this.urlPrefix + "/remote/volup");
+			requests.add("volup");
 			requests.notify();
 		}
 	}
 
 	public void keyVolDown() {
 		synchronized (requests) {
-			requests.add(this.urlPrefix + "/remote/voldn");
+			requests.add("voldn");
 			requests.notify();
 		}
 	}
 
 	public void keyMenu() {
 		synchronized (requests) {
-			requests.add(this.urlPrefix + "/remote/menu");
+			requests.add("menu");
 			requests.notify();
 		}
 	}
 
 	public void keyBack() {
 		synchronized (requests) {
-			requests.add(this.urlPrefix + "/remote/back");
+			requests.add("back");
 			requests.notify();
-		}
-	}
-	
-	public static boolean isOnline(String vdr, int port) {
-		try {
-			HttpResponse response = client.execute(new HttpGet(new URI("http://" + vdr + ":" + port + "/info.json")));
-			return response.getStatusLine().getStatusCode() == 200;
-		} catch (Exception e) {
-			return false;
 		}
 	}
 
@@ -112,9 +100,10 @@ public class VdrService extends Service {
 					}
 
 					synchronized (requests) {
-						for (String url : requests) {
+						for (String key : requests) {
 							try {
-								client.execute(new HttpPost(new URI(url)));
+								Vdr vdr = ((YaVDRApplication)getApplication()).getCurrentVdr();
+								if (vdr != null) vdr.sendKeystroke(key);
 							} catch (Exception e) {
 								Log.e(TAG, e.getMessage());
 							}

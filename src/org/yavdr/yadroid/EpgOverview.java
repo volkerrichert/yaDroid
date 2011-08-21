@@ -1,12 +1,10 @@
 package org.yavdr.yadroid;
 
 import java.io.Serializable;
-import java.net.URI;
 import java.util.ArrayList;
 
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.yavdr.yadroid.adapter.Channel;
 import org.yavdr.yadroid.adapter.ChannelAdapter;
@@ -14,31 +12,26 @@ import org.yavdr.yadroid.adapter.EndlessAdapter;
 import org.yavdr.yadroid.adapter.EpgElement;
 import org.yavdr.yadroid.adapter.EpgTeaserAdapter;
 import org.yavdr.yadroid.core.YaVDRApplication;
-import org.yavdr.yadroid.core.json.JSONClient;
-import org.yavdr.yadroid.services.VdrService;
-import org.yavdr.yadroid.services.VdrService.VdrBinder;
+import org.yavdr.yadroid.dao.pojo.Vdr;
+import org.yavdr.yadroid.services.PushService;
 import org.yavdr.yadroid.ui.coverflow.CoverFlow;
 
 import android.app.AlertDialog;
-import android.app.ListActivity;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.util.Log;
 import android.view.Display;
 import android.view.KeyEvent;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnKeyListener;
-import android.view.View.OnLongClickListener;
 import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.RotateAnimation;
@@ -50,10 +43,9 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class EpgOverview extends YaVDRListActivity implements OnClickListener,
-		OnTouchListener, OnKeyListener /*
-						 * , OnScrollListener
-						 */{
+public class EpgOverview extends YaVDRListActivity implements OnClickListener, OnKeyListener /*
+										 * , OnScrollListener
+										 */{
 	public static final String TAG = EpgOverview.class.toString();
 	public static final String STARTACTIVITY = "START";
 
@@ -64,20 +56,18 @@ public class EpgOverview extends YaVDRListActivity implements OnClickListener,
 	private int displayWidth;
 	private boolean mStartActivity = false;
 	private EpgListAdapter epgListAdapter;
-	private String urlPrefix;
 	private Channel currentChannel;
 	private int currentChannelPos;
-
-	private android.os.Handler handler = new android.os.Handler();
+	private YaVDRApplication app;
 	private TextView tv;
 
 	/** Called when the activity is first created. */
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
+		Log.d(TAG, "onCreate");
 		super.onCreate(savedInstanceState);
-
-		requestWindowFeature(Window.FEATURE_NO_TITLE);
-		requestWindowFeature(Window.FEATURE_PROGRESS);
+		
+		app = (YaVDRApplication) getApplication();
 		// getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
 		// WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
@@ -85,38 +75,41 @@ public class EpgOverview extends YaVDRListActivity implements OnClickListener,
 
 		final Bundle extras = getIntent().getExtras();
 
-		if (extras != null) {
-			Display display = ((WindowManager) getSystemService(Context.WINDOW_SERVICE))
-					.getDefaultDisplay();
-			displayHeight = display.getHeight();
-			displayWidth = display.getWidth();
+		Display display = ((WindowManager) getSystemService(Context.WINDOW_SERVICE))
+				.getDefaultDisplay();
+		displayHeight = display.getHeight();
+		displayWidth = display.getWidth();
 
-			mStartActivity = extras.getBoolean(STARTACTIVITY);
-
-			/*
-			 * Context context = getApplicationContext(); int duration =
-			 * Toast.LENGTH_SHORT;
-			 * 
-			 * Toast toast = Toast.makeText(context, "start", duration);
-			 * toast.show();
-			 */
-
-			urlPrefix = ((YaVDRApplication)getApplication()).getRestfulPrefix();
-			// currentChannel = extras.getString("channel");
-
+		mStartActivity = extras.getBoolean(STARTACTIVITY);
+		if (app.getCurrentVdr() != null) {
+			JSONObject data = app.getCurrentVdr().queryInfo("/info.json");
+			String channel = null;
+			if (data != null && data.has("channel")) {
+				try {
+					channel = data.getString("channel");
+				} catch (JSONException e) {
+				}
+			}
+			data = app.getCurrentVdr().queryInfo(
+					"/channels/" + channel + ".json");
+			int channelNr = 0;
+			if (data != null && data.has("channels")) {
+				try {
+					channelNr = data.getJSONArray("channels").getJSONObject(0)
+							.getInt("number") - 1;
+				} catch (JSONException e) {
+				}
+			}
 			setListAdapter(epgListAdapter = new EpgListAdapter(
-					items = new ArrayList<EpgElement>(), urlPrefix,
-					extras.getString("channel")));
+					items = new ArrayList<EpgElement>(), app.getCurrentVdr(),
+					channel));
 
 			View mCoverFlow = ((View) getWindow().findViewById(R.id.coverflow));
-
 			tv = (TextView) mCoverFlow.findViewById(R.id.text);
-
 			CoverFlow cFlow = (CoverFlow) mCoverFlow.findViewById(R.id.gallery);
-
 			cFlow.setAdapter(new ChannelListAdapter(
-					channelList = new ArrayList<Channel>(), extras.getString("channel")));
-
+					channelList = new ArrayList<Channel>(), channelNr));
+			cFlow.setSelection(channelNr);
 			cFlow.setMaxZoom(-300);
 			cFlow.setSpacing(0);
 			tv.setText("loading ...");
@@ -169,68 +162,51 @@ public class EpgOverview extends YaVDRListActivity implements OnClickListener,
 					epgListAdapter.setChannelId(currentChannel.getChannelId());
 
 					try {
-						(new DefaultHttpClient()).execute(new HttpPost(new URI(
-								urlPrefix + "/remote/switch/"
-										+ c.getChannelId())));
+						app.getCurrentVdr().sendKeystroke(
+								"switch/" + c.getChannelId());
 					} catch (Exception e) {
 						Log.e(TAG, e.getMessage());
 					}
 					return true;
 				}
 			});
-			
 		} else {
-			Toast toast = new Toast(getApplicationContext());
-			toast.setText("Fehler");
-			toast.show();
+			Toast.makeText(getApplicationContext(), "kein vdr????", Toast.LENGTH_LONG);
 			finish();
 		}
 	}
 
 	@Override
-	protected void onStart() {
-		super.onStart();
+	public boolean onCreateOptionsMenu(android.view.Menu menu) {
+		MenuInflater inflater = getMenuInflater();
+		inflater.inflate(R.menu.epgoverview, menu);
+		return true;
 	}
 
 	@Override
-	protected void onResume() {
-		super.onResume();
-		// The activity has become visible (it is now "resumed").
+	public boolean onOptionsItemSelected(MenuItem item) {
+		// Handle item selection
+		switch (item.getItemId()) {
+		case R.id.manage_vdr:
+			Intent intent = new Intent(
+					"org.yavdr.yadroid.intent.action.MANAGEVDR");
+			startActivity(intent);
+			return true;
+		case R.id.help:
+			return true;
+		default:
+			return super.onOptionsItemSelected(item);
+		}
 	}
 
-	@Override
-	protected void onPause() {
-		super.onPause();
-		// Another activity is taking focus (this activity is about to be
-		// "paused").
-	}
-
-	@Override
-	protected void onStop() {
-		super.onStop();
-	}
-
-	@Override
-	protected void onDestroy() {
-		super.onDestroy();
-		// The activity is about to be destroyed.
-	}
-
-	@Override
-	public boolean onTouch(View view, MotionEvent ev) {
-		return false;
-	}
-    
-	
-	
 	@Override
 	public boolean dispatchKeyEvent(KeyEvent event) {
-	    if (event.getKeyCode() == KeyEvent.KEYCODE_POWER) {
+		if (event.getKeyCode() == KeyEvent.KEYCODE_POWER) {
 
-	        return true;
-	    }
+			return true;
+		}
 
-	    return super.dispatchKeyEvent(event);
+		return super.dispatchKeyEvent(event);
 	}
 
 	@Override
@@ -246,6 +222,8 @@ public class EpgOverview extends YaVDRListActivity implements OnClickListener,
 								new DialogInterface.OnClickListener() {
 									public void onClick(DialogInterface dialog,
 											int id) {
+										PushService
+												.actionStop(getApplicationContext());
 										EpgOverview.this.finish();
 										return;
 									}
@@ -270,16 +248,14 @@ public class EpgOverview extends YaVDRListActivity implements OnClickListener,
 			if (vdrBound)
 				vdrService.keyVolDown();
 			return true;
-		case KeyEvent.KEYCODE_MENU:
-			if (vdrBound) {
-				vdrService.keyMenu();
-				// Intent intent = new
-				// Intent("org.yavdr.yadroid.intent.action.MENU");
-				// intent.putExtras(getIntent().getExtras());
-
-				// startActivity(intent);
-			}
-			return true;
+			/*
+			 * case KeyEvent.KEYCODE_MENU: if (vdrBound) { vdrService.keyMenu();
+			 * // Intent intent = new //
+			 * Intent("org.yavdr.yadroid.intent.action.MENU"); //
+			 * intent.putExtras(getIntent().getExtras());
+			 * 
+			 * // startActivity(intent); } return true;
+			 */
 		}
 		return super.onKeyDown(keyCode, event);
 
@@ -290,33 +266,32 @@ public class EpgOverview extends YaVDRListActivity implements OnClickListener,
 		// TODO Auto-generated method stub
 		return super.onKeyLongPress(keyCode, event);
 	}
-	
+
 	@Override
 	public boolean onKeyMultiple(int keyCode, int repeatCount, KeyEvent event) {
 		// TODO Auto-generated method stub
 		return super.onKeyMultiple(keyCode, repeatCount, event);
 	}
-	
+
 	@Override
 	public void onClick(View view) {
-		Log.d(TAG, "clikc");
+		Log.d(TAG, "click");
 	}
 
 	@Override
 	protected void onListItemClick(ListView l, View v, int position, long id) {
 		Intent intent = new Intent("org.yavdr.yadroid.intent.action.EPGDETAIL");
-		intent.putExtra("EPGDETAIL", (Serializable)items.get(position));
+		intent.putExtra("EPGDETAIL", (Serializable) items.get(position));
 		startActivity(intent);
 	}
 
 	class EpgListAdapter extends EndlessAdapter {
 		private RotateAnimation rotate;
 		private JSONObject data;
-		private String urlPrefix;
 		private String channel;
+		private Vdr vdr;
 
-		EpgListAdapter(ArrayList<EpgElement> list, String urlPrefix,
-				String channel) {
+		EpgListAdapter(ArrayList<EpgElement> list, Vdr vdr, String channel) {
 			super(new EpgTeaserAdapter(getApplicationContext(),
 					R.layout.epgitem, list, EpgOverview.this));
 
@@ -326,7 +301,7 @@ public class EpgOverview extends YaVDRListActivity implements OnClickListener,
 			rotate.setRepeatMode(Animation.RESTART);
 			rotate.setRepeatCount(Animation.INFINITE);
 
-			this.urlPrefix = urlPrefix;
+			this.vdr = vdr;
 			this.channel = channel;
 		}
 
@@ -341,12 +316,13 @@ public class EpgOverview extends YaVDRListActivity implements OnClickListener,
 
 		@Override
 		protected View getPendingView(ViewGroup parent) {
-			View row = getLayoutInflater().inflate(R.layout.pending_epg, null);
 
-			row.setVisibility(View.VISIBLE);
-			row.startAnimation(rotate);
+			View pendingView = getLayoutInflater().inflate(R.layout.pending_epg, null);
 
-			return (row);
+			pendingView.setVisibility(View.VISIBLE);
+			pendingView.startAnimation(rotate);
+
+			return pendingView;
 		}
 
 		@Override
@@ -355,19 +331,16 @@ public class EpgOverview extends YaVDRListActivity implements OnClickListener,
 				EpgTeaserAdapter a = (EpgTeaserAdapter) getWrappedAdapter();
 
 				long startTime = 0;
-				JSONClient client;
 				if (a.getCount() > 0) {
 					EpgElement lastItem = items.get(a.getCount() - 1);
 					startTime = (lastItem.getStartTime() + lastItem
 							.getDuration());
-					client = JSONClient.create(urlPrefix + "/events/" + channel
-							+ "/0/" + startTime + ".json?start=0&limit=15");
+					data = vdr.queryInfo("/events/" + channel + "/0/"
+							+ startTime + ".json?start=0&limit=15");
 				} else
-					client = JSONClient.create(urlPrefix + "/events/" + channel
+					data = vdr.queryInfo("/events/" + channel
 							+ "/0.json?start=0&limit=15");
-				client.setConnectionTimeout(3000);
-				client.setSoTimeout(30000);
-				data = client.callSimple();
+
 				if (data != null) {
 					return data.getInt("count") > 0
 							&& data.getInt("total") >= items.size();
@@ -403,8 +376,9 @@ public class EpgOverview extends YaVDRListActivity implements OnClickListener,
 								int images = elem.getInt("images");
 								epg.setImageCount(images);
 								if (images > 0) {
-									epg.setImageUrl(urlPrefix + "/events/image/"
-											+ epg.getId() + "/");
+									epg.setImageUrl(vdr.getUrlPrefix()
+											+ "/events/image/" + epg.getId()
+											+ "/");
 								}
 							}
 							a.add(epg);
@@ -421,8 +395,9 @@ public class EpgOverview extends YaVDRListActivity implements OnClickListener,
 	class ChannelListAdapter extends EndlessAdapter {
 		private JSONObject data;
 		private RotateAnimation rotate;
+		private int startChannelNr;
 
-		public ChannelListAdapter(ArrayList<Channel> list, String channel) {
+		public ChannelListAdapter(ArrayList<Channel> list, int channelNr) {
 			super(new ChannelAdapter(getApplicationContext(),
 					R.layout.cover_flow_view, list, EpgOverview.this));
 
@@ -431,27 +406,24 @@ public class EpgOverview extends YaVDRListActivity implements OnClickListener,
 			rotate.setDuration(600);
 			rotate.setRepeatMode(Animation.RESTART);
 			rotate.setRepeatCount(Animation.INFINITE);
+
+			startChannelNr = channelNr;
 		}
 
 		@Override
 		protected boolean cacheInBackground() {
 			try {
-				String urlPrefix = ((YaVDRApplication)getApplication()).getRestfulPrefix();
 
 				ChannelAdapter a = (ChannelAdapter) getWrappedAdapter();
-
-				JSONClient client;
 				if (a.getCount() > 0)
-					client = JSONClient.create(urlPrefix
-							+ "/channels.json?start=" + a.getCount()
-							+ "&limit=15");
+					data = app.getCurrentVdr().queryInfo(
+							"/channels.json?start=" + a.getCount()
+									+ "&limit=15");
 				else
-					client = JSONClient.create(urlPrefix
-							+ "/channels.json?start=0&limit=5");
+					data = app.getCurrentVdr().queryInfo(
+							"/channels.json?start=0&limit="
+									+ Math.max(5, startChannelNr));
 
-				client.setConnectionTimeout(3000);
-				client.setSoTimeout(30000);
-				data = client.callSimple();
 				if (data != null) {
 					return data.getInt("count") > 0
 							&& data.getInt("total") >= channelList.size();
@@ -487,7 +459,9 @@ public class EpgOverview extends YaVDRListActivity implements OnClickListener,
 							c.setRadio(elem.getBoolean("is_radio"));
 
 							if (elem.getBoolean("image")) {
-								c.setImageUrl(urlPrefix + "/channels/image/"
+								c.setImageUrl(app.getCurrentVdr()
+										.getUrlPrefix()
+										+ "/channels/image/"
 										+ c.getChannelId());
 							}
 							if (a.size() == currentChannelPos) {
@@ -534,7 +508,7 @@ public class EpgOverview extends YaVDRListActivity implements OnClickListener,
 	@Override
 	public boolean onKey(View arg0, int arg1, KeyEvent arg2) {
 		// TODO Auto-generated method stub
-		return false; //super.onKey(arg0, arg1, arg2);
+		return false; // super.onKey(arg0, arg1, arg2);
 	}
 
 }

@@ -23,7 +23,7 @@ public class YaDroidDBHelper extends OrmLiteSqliteOpenHelper {
 
 	private static final String TAG = YaDroidDBHelper.class.toString();
 	private static final String DATABASE_NAME = "yaDroid.db";
-	private static final int DATABASE_VERSION = 3;
+	private static final int DATABASE_VERSION = 1;
 
 	private Dao<Vdr, String> vdrDao;
 

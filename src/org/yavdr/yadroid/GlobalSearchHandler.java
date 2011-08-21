@@ -16,8 +16,8 @@ public class GlobalSearchHandler extends Activity {
 		Uri intentData = intent.getData();
 		Long id = null;
 		try {
-			id = intentData.getLastPathSegment() != null ? Long
-					.valueOf(intentData.getLastPathSegment()) : null;
+			//id = intentData.getLastPathSegment() != null ? Long
+			//		.valueOf(intentData.getLastPathSegment()) : null;
 		} catch (NumberFormatException e) {
 			// null id may be just fine or it may be not
 		}
